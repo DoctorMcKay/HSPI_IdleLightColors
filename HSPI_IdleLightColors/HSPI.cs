@@ -14,12 +14,13 @@ namespace HSPI_IdleLightColors
 	// ReSharper disable once InconsistentNaming
 	public class HSPI : HspiBase
 	{
-		public const string PLUGIN_NAME = "HS-WD200+ Idle Light Colors";
+		public const string PLUGIN_NAME = "HS-WD200 Idle Light Colors";
 
 		private const WD200NormalModeColor OFF_COLOR = WD200NormalModeColor.Blue;
 		private const WD200NormalModeColor ON_COLOR = WD200NormalModeColor.White;
 
 		private Dictionary<int, DimmerDevice> dimmersByRef;
+		private bool haveDoneInitialUpdate;
 
 		public HSPI() {
 			Name = PLUGIN_NAME;
@@ -30,6 +31,7 @@ namespace HSPI_IdleLightColors
 			Program.WriteLog(LogType.Verbose, "InitIO");
 
 			dimmersByRef = new Dictionary<int, DimmerDevice>();
+			haveDoneInitialUpdate = false;
 			
 			Dictionary<byte, DimmerDevice> dict = new Dictionary<byte, DimmerDevice>();
 			clsDeviceEnumeration enumerator = (clsDeviceEnumeration) hs.GetDeviceEnumerator();
@@ -42,7 +44,7 @@ namespace HSPI_IdleLightColors
 
 					// It's a Z-Wave device
 					PlugExtraData.clsPlugExtraData extraData = device.get_PlugExtraData_Get(hs);
-					byte? nodeId = (byte?) extraData.GetNamed("node_id");
+					byte? nodeId = (byte?) extraData?.GetNamed("node_id");
 					if (nodeId == null || dict.ContainsKey((byte) nodeId)) {
 						continue;
 					}
@@ -56,17 +58,14 @@ namespace HSPI_IdleLightColors
 
 						dict[(byte) nodeId] = dimmerDevice;
 						dimmersByRef[dimmerDevice.SwitchMultiLevelDeviceRef] = dimmerDevice;
-						
-						// Initial update
-						updateDimmerForStatus(dimmerDevice, device.get_devValue(hs));
 					}
 				}
 			} while (!enumerator.Finished);
-			
+
 			callbacks.RegisterEventCB(HomeSeerAPI.Enums.HSEvent.VALUE_SET, Name, InstanceFriendlyName());
 			callbacks.RegisterEventCB(HomeSeerAPI.Enums.HSEvent.VALUE_CHANGE, Name, InstanceFriendlyName());
 
-			Program.WriteLog(LogType.Info, "Init complete");
+			Program.WriteLog(LogType.Info, string.Format("Init complete. Found {0} dimmers.", dimmersByRef.Keys.Count));
 
 			return "";
 		}
@@ -109,8 +108,19 @@ namespace HSPI_IdleLightColors
 				}
 
 				Program.WriteLog(LogType.Debug, string.Format("Dimmer {0} was set to {1}.", devRef, newValue));
-				
-				updateDimmerForStatus(dimmersByRef[devRef], newValue);
+
+				if (!haveDoneInitialUpdate) {
+					// We want to delay this until we've confirmed that we received a Z-Wave update, since now we know
+					// that Z-Wave is up and running
+					haveDoneInitialUpdate = true;
+
+					foreach (DimmerDevice dimmerDevice in dimmersByRef.Values) {
+						Program.WriteLog(LogType.Info, "Running startup update for all dimmers");
+						updateDimmerForStatus(dimmerDevice, hs.DeviceValueEx(dimmerDevice.SwitchMultiLevelDeviceRef));
+					}
+				} else {
+					updateDimmerForStatus(dimmersByRef[devRef], newValue);
+				}
 			} catch (Exception ex) {
 				Program.WriteLog(LogType.Error, "Exception in HSEvent: " + ex.Message);
 				Console.WriteLine(ex);
