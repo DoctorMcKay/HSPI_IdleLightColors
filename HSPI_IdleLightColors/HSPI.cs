@@ -16,6 +16,9 @@ namespace HSPI_IdleLightColors
 	{
 		public const string PLUGIN_NAME = "HS-WD200+ Idle Light Colors";
 
+		private const WD200NormalModeColor OFF_COLOR = WD200NormalModeColor.Blue;
+		private const WD200NormalModeColor ON_COLOR = WD200NormalModeColor.White;
+
 		private Dictionary<int, DimmerDevice> dimmersByRef;
 
 		public HSPI() {
@@ -53,6 +56,9 @@ namespace HSPI_IdleLightColors
 
 						dict[(byte) nodeId] = dimmerDevice;
 						dimmersByRef[dimmerDevice.SwitchMultiLevelDeviceRef] = dimmerDevice;
+						
+						// Initial update
+						updateDimmerForStatus(dimmerDevice, device.get_devValue(hs));
 					}
 				}
 			} while (!enumerator.Finished);
@@ -103,24 +109,23 @@ namespace HSPI_IdleLightColors
 				}
 
 				Program.WriteLog(LogType.Debug, string.Format("Dimmer {0} was set to {1}.", devRef, newValue));
-
-				DeviceClass device = (DeviceClass) hs.GetDeviceByRef(devRef);
-				PlugExtraData.clsPlugExtraData extraData = device.get_PlugExtraData_Get(hs);
-				string homeID = (string) extraData.GetNamed("homeid");
-				byte nodeID = (byte) extraData.GetNamed("node_id");
-
-				HSPI_ZWave.HSPI.ConfigResult result;
-				if (Math.Abs(newValue) < 0.1) {
-					// It's off
-					result = setDeviceNormalModeColor(homeID, nodeID, WD200NormalModeColor.Blue);
-				} else {
-					result = setDeviceNormalModeColor(homeID, nodeID, WD200NormalModeColor.White);
-				}
-				Program.WriteLog(LogType.Info, string.Format("Setting normal mode color for device {0} (node ID {1}) result: {2}", devRef, nodeID, result));
+				
+				updateDimmerForStatus(dimmersByRef[devRef], newValue);
 			} catch (Exception ex) {
 				Program.WriteLog(LogType.Error, "Exception in HSEvent: " + ex.Message);
 				Console.WriteLine(ex);
 			}
 		}
+
+		private void updateDimmerForStatus(DimmerDevice dimmerDevice, double value) {
+			WD200NormalModeColor newColor = Math.Abs(value) < 0.1 ? OFF_COLOR : ON_COLOR;
+			HSPI_ZWave.HSPI.ConfigResult result = setDeviceNormalModeColor(dimmerDevice.HomeID, dimmerDevice.NodeID, newColor);
+			Program.WriteLog(LogType.Info, string.Format(
+				"Setting normal mode color for device {0} (node ID {1}) to {2}; result: {3}",
+				dimmerDevice.SwitchMultiLevelDeviceRef,
+				dimmerDevice.NodeID,
+				newColor,
+				result
+			));}
 	}
 }
