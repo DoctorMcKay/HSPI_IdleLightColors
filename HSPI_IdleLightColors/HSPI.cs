@@ -44,19 +44,20 @@ namespace HSPI_IdleLightColors
 
 					// It's a Z-Wave device
 					PlugExtraData.clsPlugExtraData extraData = device.get_PlugExtraData_Get(hs);
-					byte? nodeId = (byte?) extraData?.GetNamed("node_id");
-					if (nodeId == null || dict.ContainsKey((byte) nodeId)) {
+					string[] addressParts = device.get_Address(hs).Split('-');
+					byte nodeId = byte.Parse(addressParts[1]);
+					if (dict.ContainsKey(nodeId)) {
 						continue;
 					}
 
 					if (deviceIsDimmer(extraData)) {
 						DimmerDevice dimmerDevice = new DimmerDevice {
-							HomeID = (string) extraData.GetNamed("homeid"),
-							NodeID = (byte) nodeId,
+							HomeID = addressParts[0],
+							NodeID = nodeId,
 							SwitchMultiLevelDeviceRef = device.get_Ref(hs)
 						};
 
-						dict[(byte) nodeId] = dimmerDevice;
+						dict[nodeId] = dimmerDevice;
 						dimmersByRef[dimmerDevice.SwitchMultiLevelDeviceRef] = dimmerDevice;
 					}
 				}
@@ -65,7 +66,11 @@ namespace HSPI_IdleLightColors
 			callbacks.RegisterEventCB(HomeSeerAPI.Enums.HSEvent.VALUE_SET, Name, InstanceFriendlyName());
 			callbacks.RegisterEventCB(HomeSeerAPI.Enums.HSEvent.VALUE_CHANGE, Name, InstanceFriendlyName());
 
-			Program.WriteLog(LogType.Info, string.Format("Init complete. Found {0} dimmers.", dimmersByRef.Keys.Count));
+			Program.WriteLog(LogType.Info, string.Format(
+				"Init complete. Found {0} dimmers with node IDs: {1}",
+				dimmersByRef.Keys.Count,
+				string.Join(", ", dimmersByRef.Values.Select(dimmerDevice => dimmerDevice.NodeID))
+			));
 
 			return "";
 		}
