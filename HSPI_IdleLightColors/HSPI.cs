@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
+using System.Web;
 using HomeSeerAPI;
 using HSPI_IdleLightColors.Enums;
 using HSPI_IdleLightColors.Structs;
@@ -16,8 +17,8 @@ namespace HSPI_IdleLightColors
 	{
 		public const string PLUGIN_NAME = "HS-WD200 Idle Light Colors";
 
-		private const WD200NormalModeColor OFF_COLOR = WD200NormalModeColor.Blue;
-		private const WD200NormalModeColor ON_COLOR = WD200NormalModeColor.White;
+		private WD200NormalModeColor offColor;
+		private WD200NormalModeColor onColor;
 
 		private Dictionary<int, DimmerDevice> dimmersByRef;
 		private bool haveDoneInitialUpdate;
@@ -50,7 +51,7 @@ namespace HSPI_IdleLightColors
 						continue;
 					}
 
-					if (deviceIsDimmer(extraData)) {
+					if (DeviceIsDimmer(extraData)) {
 						DimmerDevice dimmerDevice = new DimmerDevice {
 							HomeID = addressParts[0],
 							NodeID = nodeId,
@@ -66,26 +67,136 @@ namespace HSPI_IdleLightColors
 			callbacks.RegisterEventCB(HomeSeerAPI.Enums.HSEvent.VALUE_SET, Name, InstanceFriendlyName());
 			callbacks.RegisterEventCB(HomeSeerAPI.Enums.HSEvent.VALUE_CHANGE, Name, InstanceFriendlyName());
 
+			hs.RegisterPage("IdleLightColorsSettings", Name, InstanceFriendlyName());
+			WebPageDesc configLink = new WebPageDesc {
+				plugInName = Name,
+				link = "IdleLightColorsSettings",
+				linktext = "Settings",
+				order = 1,
+				page_title = "HS-WD200+ Idle Light Colors Settings",
+				plugInInstance = InstanceFriendlyName()
+			};
+			callbacks.RegisterConfigLink(configLink);
+			callbacks.RegisterLink(configLink);
+
+			offColor = (WD200NormalModeColor) int.Parse(hs.GetINISetting("Colors", "idle_color",
+				((int) WD200NormalModeColor.Blue).ToString(), IniFilename));
+			onColor = (WD200NormalModeColor) int.Parse(hs.GetINISetting("Colors", "active_color",
+				((int) WD200NormalModeColor.White).ToString(), IniFilename));
+
 			Program.WriteLog(LogType.Info, string.Format(
-				"Init complete. Found {0} dimmers with node IDs: {1}",
+				"Init complete. Active color: {0}. Idle color: {1}. Found {2} dimmers with node IDs: {3}",
+				onColor,
+				offColor,
 				dimmersByRef.Keys.Count,
 				string.Join(", ", dimmersByRef.Values.Select(dimmerDevice => dimmerDevice.NodeID))
 			));
 
 			return "";
 		}
+
+		public override string GetPagePlugin(string pageName, string user, int userRights, string queryString) {
+			Program.WriteLog(LogType.Verbose, $"Requested page name {pageName} by user {user} with rights {userRights}");
+
+			switch (pageName) {
+				case "IdleLightColorsSettings":
+					return BuildSettingsPage(user, userRights, queryString);
+			}
+
+			return "";
+		}
+
+		private string BuildSettingsPage(string user, int userRights, string queryString, string messageBox = null, string messageBoxClass = null) {
+			string pageName = "IdleLightColorsSettings";
+			PageBuilderAndMenu.clsPageBuilder builder = new PageBuilderAndMenu.clsPageBuilder(pageName);
+			if ((userRights & 2) != 2) {
+				// User is not an admin
+				builder.reset();
+				builder.AddHeader(hs.GetPageHeader(pageName, "HS-WD200+ Idle Light Colors Settings", "", "", false, true));
+				builder.AddBody("<p><strong>Access Denied:</strong> You are not an administrative user.</p>");
+				builder.AddFooter(hs.GetPageFooter());
+				builder.suppressDefaultFooter = true;
+
+				return builder.BuildPage();
+			}
+
+			StringBuilder sb = new StringBuilder();
+			sb.Append(PageBuilderAndMenu.clsPageBuilder.FormStart("ils_config_form", "ils_config_form", "post"));
+			sb.Append("<table width=\"1000px\" cellspacing=\"0\"><tr><td class=\"tableheader\" colspan=\"3\">Settings</td></tr>");
+			
+			sb.Append("<tr><td class=\"tablecell\" style=\"width:200px\" align=\"left\">Normal Mode Active Color:</td>");
+			sb.Append("<td class=\"tablecell\">");
+			clsJQuery.jqDropList dropdown = new clsJQuery.jqDropList("ActiveColor", pageName, true);
+			BuildColorDropdown(pageName, dropdown, onColor);
+			sb.Append(dropdown.Build());
+			sb.Append("</td></tr>");
+			
+			sb.Append("<tr><td class=\"tablecell\" style=\"width:200px\" align=\"left\">Normal Mode Idle Color:</td>");
+			sb.Append("<td class=\"tablecell\">");
+			dropdown = new clsJQuery.jqDropList("IdleColor", pageName, true);
+			BuildColorDropdown(pageName, dropdown, offColor);
+			sb.Append(dropdown.Build());
+			sb.Append("</td></tr>");
+
+			sb.Append("</table>");
+			
+			clsJQuery.jqButton doneBtn = new clsJQuery.jqButton("DoneBtn", "Done", pageName, false);
+			doneBtn.url = "/";
+			sb.Append("<br />");
+			sb.Append(doneBtn.Build());
+			sb.Append("<br /><br />");
+			
+			builder.reset();
+			builder.AddHeader(hs.GetPageHeader(pageName, "HS-WD200+ Idle Light Colors Settings", "", "", false, true));
+			builder.AddBody(sb.ToString());
+			builder.AddFooter(hs.GetPageFooter());
+			builder.suppressDefaultFooter = true;
+
+			return builder.BuildPage();
+		}
+
+		public override string PostBackProc(string page, string data, string user, int userRights) {
+			Program.WriteLog(LogType.Debug, $"PostBackProc page name {page} by user {user} with rights {userRights}");
+			if (page != "IdleLightColorsSettings") {
+				return "Unknown page " + page;
+			}
+
+			if ((userRights & 2) != 2) {
+				return "Access denied: you are not an administrative user.";
+			}
+
+			NameValueCollection postData = HttpUtility.ParseQueryString(data);
+
+			string activeColor = postData.Get("ActiveColor");
+			string idleColor = postData.Get("IdleColor");
+			hs.SaveINISetting("Colors", "active_color", activeColor, IniFilename);
+			hs.SaveINISetting("Colors", "idle_color", idleColor, IniFilename);
+			onColor = (WD200NormalModeColor) int.Parse(activeColor);
+			offColor = (WD200NormalModeColor) int.Parse(idleColor);
+
+			// Reset colors the next time we get a Z-Wave event
+			haveDoneInitialUpdate = false;
+
+			return "";
+		}
+
+		private static void BuildColorDropdown(string pageName, clsJQuery.jqDropList dropdown, WD200NormalModeColor selectedColor) {
+			foreach (int i in Enum.GetValues(typeof(WD200NormalModeColor))) {
+				dropdown.AddItem(((WD200NormalModeColor) i).ToString(), i.ToString(), (int) selectedColor == i);
+			}
+		}
 		
-		private bool deviceIsDimmer(PlugExtraData.clsPlugExtraData extraData) {
+		private static bool DeviceIsDimmer(PlugExtraData.clsPlugExtraData extraData) {
 			int? manufacturerId = (int?) extraData.GetNamed("manufacturer_id");
-			UInt16? prodId = (UInt16?) extraData.GetNamed("manufacturer_prod_id");
-			UInt16? prodType = (UInt16?) extraData.GetNamed("manufacturer_prod_type");
+			ushort? prodId = (ushort?) extraData.GetNamed("manufacturer_prod_id");
+			ushort? prodType = (ushort?) extraData.GetNamed("manufacturer_prod_type");
 			int? relationship = (int?) extraData.GetNamed("relationship");
 			byte? commandClass = (byte?) extraData.GetNamed("commandclass");
 
 			return manufacturerId == 12 && prodId == 12342 && prodType == 17479 && relationship == 4 && commandClass == 38;
 		}
 
-		private HSPI_ZWave.HSPI.ConfigResult setDeviceNormalModeColor(string homeID, byte nodeID, WD200NormalModeColor color) {
+		private HSPI_ZWave.HSPI.ConfigResult SetDeviceNormalModeColor(string homeID, byte nodeID, WD200NormalModeColor color) {
 			return (HSPI_ZWave.HSPI.ConfigResult) hs.PluginFunction("Z-Wave", "", "Configuration_Set", new object[] {
 				homeID,
 				nodeID,
@@ -112,7 +223,7 @@ namespace HSPI_IdleLightColors
 					return;
 				}
 
-				Program.WriteLog(LogType.Debug, string.Format("Dimmer {0} was set to {1}.", devRef, newValue));
+				Program.WriteLog(LogType.Debug, $"Dimmer {devRef} was set to {newValue}.");
 
 				if (!haveDoneInitialUpdate) {
 					// We want to delay this until we've confirmed that we received a Z-Wave update, since now we know
@@ -121,10 +232,10 @@ namespace HSPI_IdleLightColors
 
 					foreach (DimmerDevice dimmerDevice in dimmersByRef.Values) {
 						Program.WriteLog(LogType.Info, "Running startup update for all dimmers");
-						updateDimmerForStatus(dimmerDevice, hs.DeviceValueEx(dimmerDevice.SwitchMultiLevelDeviceRef));
+						UpdateDimmerForStatus(dimmerDevice, hs.DeviceValueEx(dimmerDevice.SwitchMultiLevelDeviceRef));
 					}
 				} else {
-					updateDimmerForStatus(dimmersByRef[devRef], newValue);
+					UpdateDimmerForStatus(dimmersByRef[devRef], newValue);
 				}
 			} catch (Exception ex) {
 				Program.WriteLog(LogType.Error, "Exception in HSEvent: " + ex.Message);
@@ -132,9 +243,9 @@ namespace HSPI_IdleLightColors
 			}
 		}
 
-		private void updateDimmerForStatus(DimmerDevice dimmerDevice, double value) {
-			WD200NormalModeColor newColor = Math.Abs(value) < 0.1 ? OFF_COLOR : ON_COLOR;
-			HSPI_ZWave.HSPI.ConfigResult result = setDeviceNormalModeColor(dimmerDevice.HomeID, dimmerDevice.NodeID, newColor);
+		private void UpdateDimmerForStatus(DimmerDevice dimmerDevice, double value) {
+			WD200NormalModeColor newColor = Math.Abs(value) < 0.1 ? offColor : onColor;
+			HSPI_ZWave.HSPI.ConfigResult result = SetDeviceNormalModeColor(dimmerDevice.HomeID, dimmerDevice.NodeID, newColor);
 			Program.WriteLog(LogType.Info, string.Format(
 				"Setting normal mode color for device {0} (node ID {1}) to {2}; result: {3}",
 				dimmerDevice.SwitchMultiLevelDeviceRef,
