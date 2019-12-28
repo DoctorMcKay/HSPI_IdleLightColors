@@ -178,8 +178,9 @@ namespace HSPI_IdleLightColors
 			onColor = (WD200NormalModeColor) int.Parse(activeColor);
 			offColor = (WD200NormalModeColor) int.Parse(idleColor);
 
-			// Reset colors the next time we get a Z-Wave event
-			haveDoneInitialUpdate = false;
+			if (haveDoneInitialUpdate) {
+				UpdateAllDimmers();
+			}
 
 			return "";
 		}
@@ -233,17 +234,20 @@ namespace HSPI_IdleLightColors
 					// We want to delay this until we've confirmed that we received a Z-Wave update, since now we know
 					// that Z-Wave is up and running
 					haveDoneInitialUpdate = true;
-
-					foreach (DimmerDevice dimmerDevice in dimmersByRef.Values) {
-						Program.WriteLog(LogType.Info, "Running startup update for all dimmers");
-						UpdateDimmerForStatus(dimmerDevice, hs.DeviceValueEx(dimmerDevice.SwitchMultiLevelDeviceRef));
-					}
+					UpdateAllDimmers();
 				} else {
 					UpdateDimmerForStatus(dimmersByRef[devRef], newValue);
 				}
 			} catch (Exception ex) {
 				Program.WriteLog(LogType.Error, "Exception in HSEvent: " + ex.Message);
 				Console.WriteLine(ex);
+			}
+		}
+
+		private void UpdateAllDimmers() {
+			foreach (DimmerDevice dimmerDevice in dimmersByRef.Values) {
+				Program.WriteLog(LogType.Info, "Running startup update for all dimmers");
+				UpdateDimmerForStatus(dimmerDevice, hs.DeviceValueEx(dimmerDevice.SwitchMultiLevelDeviceRef));
 			}
 		}
 
