@@ -121,6 +121,10 @@ namespace HSPI_IdleLightColors
 			}
 
 			StringBuilder sb = new StringBuilder();
+			sb.Append(
+				"<p>The active color will be used when an HS-WD200+ dimmer is in normal mode and is on (at any level).<br />The idle color will be used when an HS-WD200+ dimmer is in normal mode and is off.</p>");
+			sb.Append("<p>Status mode will override these colors, as usual.</p>");
+			
 			sb.Append(PageBuilderAndMenu.clsPageBuilder.FormStart("ils_config_form", "ils_config_form", "post"));
 			sb.Append("<table width=\"1000px\" cellspacing=\"0\"><tr><td class=\"tableheader\" colspan=\"3\">Settings</td></tr>");
 			
