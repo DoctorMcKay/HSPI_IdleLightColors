@@ -28,14 +28,12 @@ jobs:
       run: |
         mkdir artifacts
         cp HSPI_IdleLightColors\bin\Release\HSPI_IdleLightColors.exe artifacts\HSPI_IdleLightColors.exe
-        cp HSPI_IdleLightColors.exe.config artifacts\HSPI_IdleLightColors.exe.config
         cp install.txt artifacts\install.txt
     
     - name: Stage debug artifacts
       run: |
         mkdir artifacts-debug
         cp HSPI_IdleLightColors\bin\Debug\HSPI_IdleLightColors.exe "artifacts-debug\HSPI_IdleLightColors.exe"
-        cp HSPI_IdleLightColors.exe.config artifacts-debug\HSPI_IdleLightColors.exe.config
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v1
