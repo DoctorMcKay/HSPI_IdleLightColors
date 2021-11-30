@@ -52,7 +52,7 @@
       <HintPath>..\packages\homeseer.1.2.8\lib\net45\HSCF.dll</HintPath>
     </Reference>
     <Reference Include="HSPI_ZWave, Version=3.0.2.261, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\HSPI_ZWave.exe</HintPath>
+      <HintPath>..\HSPI_ZWave.exe</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Scheduler, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null">
