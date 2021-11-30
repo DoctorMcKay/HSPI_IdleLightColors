@@ -198,7 +198,8 @@ namespace HSPI_IdleLightColors
 			int? relationship = (int?) extraData.GetNamed("relationship");
 			byte? commandClass = (byte?) extraData.GetNamed("commandclass");
 
-			return manufacturerId == 12 && prodId == 12342 && prodType == 17479 && relationship == 4 && commandClass == 38;
+			// 12342 = WD200; 16439 = WX300
+			return manufacturerId == 12 && (prodId == 12342 || prodId == 16439) && prodType == 17479 && relationship == 4 && commandClass == 38;
 		}
 
 		private HSPI_ZWave.HSPI.ConfigResult SetDeviceNormalModeColor(string homeID, byte nodeID, WD200NormalModeColor color) {

@@ -1,6 +1,6 @@
-# HS-WD200+ Idle Light Colors
+# HS-WD200/WX300+ Idle Light Colors
 
-This HS3 plugin allows you to set a custom normal mode color for when your HS-WD200+ dimmers are turned off.
+This HS3 plugin allows you to set a custom normal mode color for when your HS-WD200/WX300+ dimmers are turned off.
 This is useful if you set your dimmers to leave the bottom LED on when the load is off, allowing you to tell
 at a glance if the load is on or not. Also, I think it just looks better.
 
