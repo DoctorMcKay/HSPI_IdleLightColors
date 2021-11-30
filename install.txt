@@ -1,0 +1,2 @@
+HSPI_IdleLightColors.exe,.,0
+HSPI_IdleLightColors.exe.config,.,0
