@@ -23,6 +23,8 @@ namespace HSPI_IdleLightColors
 		private Dictionary<int, DimmerDevice> dimmersByRef;
 		private bool haveDoneInitialUpdate;
 
+		private const int MFG_ID_HOMESEER_TECHNOLOGIES = 0x000c;
+
 		public HSPI() {
 			Name = PLUGIN_NAME;
 			PluginIsFree = true;
@@ -199,7 +201,11 @@ namespace HSPI_IdleLightColors
 			byte? commandClass = (byte?) extraData.GetNamed("commandclass");
 
 			// 12342 = WD200; 16439 = WX300
-			return manufacturerId == 12 && (prodId == 12342 || prodId == 16439) && prodType == 17479 && relationship == 4 && commandClass == 38;
+			return manufacturerId == MFG_ID_HOMESEER_TECHNOLOGIES
+			       && prodType == 0x4447
+			       && (prodId == 0x3036 || prodId == 0x4037)
+			       && relationship == 4
+			       && commandClass == 38;
 		}
 
 		private HSPI_ZWave.HSPI.ConfigResult SetDeviceNormalModeColor(string homeID, byte nodeID, WD200NormalModeColor color) {
