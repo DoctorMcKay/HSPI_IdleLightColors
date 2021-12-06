@@ -200,7 +200,7 @@ namespace HSPI_IdleLightColors
 			int? relationship = (int?) extraData.GetNamed("relationship");
 			byte? commandClass = (byte?) extraData.GetNamed("commandclass");
 
-			// 12342 = WD200; 16439 = WX300
+			// 0x3036 = WD200; 0x4037 = WX300
 			return manufacturerId == MFG_ID_HOMESEER_TECHNOLOGIES
 			       && prodType == 0x4447
 			       && (prodId == 0x3036 || prodId == 0x4037)
