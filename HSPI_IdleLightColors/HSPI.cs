@@ -200,10 +200,10 @@ namespace HSPI_IdleLightColors
 			int? relationship = (int?) extraData.GetNamed("relationship");
 			byte? commandClass = (byte?) extraData.GetNamed("commandclass");
 
-			// 0x3036 = WD200; 0x4037 = WX300
+			// 0x3036 = WD200; 0x4036 = WX300 in dimmer mode; 0x4037 = WX300 in binary switch mode
 			return manufacturerId == MFG_ID_HOMESEER_TECHNOLOGIES
 			       && prodType == 0x4447
-			       && (prodId == 0x3036 || prodId == 0x4037)
+			       && (prodId == 0x3036 || prodId == 0x4036 || prodId == 0x4037)
 			       && relationship == 4
 			       && commandClass == 38;
 		}
