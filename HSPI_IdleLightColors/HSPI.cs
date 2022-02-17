@@ -200,12 +200,13 @@ namespace HSPI_IdleLightColors
 			int? relationship = (int?) extraData.GetNamed("relationship");
 			byte? commandClass = (byte?) extraData.GetNamed("commandclass");
 
-			// 0x3036 = WD200; 0x4036 = WX300 in dimmer mode; 0x4037 = WX300 in binary switch mode
+			// Product ID: 0x3036 = WD200; 0x4036 = WX300 in dimmer mode; 0x4037 = WX300 in binary switch mode
+			// Command Class: 0x25 is binary switch, for WX300. 0x26 is switch multilevel - http://wiki.micasaverde.com/index.php/ZWave_Command_Classes
 			return manufacturerId == MFG_ID_HOMESEER_TECHNOLOGIES
 			       && prodType == 0x4447
 			       && (prodId == 0x3036 || prodId == 0x4036 || prodId == 0x4037)
 			       && relationship == 4
-			       && commandClass == 38;
+			       && (commandClass == 0x25 || commandClass == 0x26);
 		}
 
 		private HSPI_ZWave.HSPI.ConfigResult SetDeviceNormalModeColor(string homeID, byte nodeID, WD200NormalModeColor color) {
