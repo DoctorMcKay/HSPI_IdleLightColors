@@ -1,6 +1,10 @@
 name: CI
 
-on: [push]
+on:
+  push:
+    branches:
+      # Only run on branch push, not tag push
+      - '**'
 
 jobs:
   build:
@@ -19,6 +23,11 @@ jobs:
     - name: Nuget restore
       run: nuget restore HSPI_IdleLightColors.sln
       
+    - name: Generate assembly version
+      uses: DoctorMcKay/action-csharp-majoryearweekbuild-version@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
     - name: MSBuild
       run: |
         msbuild /p:Configuration=Debug HSPI_IdleLightColors.sln
@@ -28,21 +37,26 @@ jobs:
       run: |
         mkdir artifacts
         cp HSPI_IdleLightColors\bin\Release\HSPI_IdleLightColors.exe artifacts\HSPI_IdleLightColors.exe
+        cp HSPI_IdleLightColors\bin\Release\HSPI_IdleLightColors.exe.config artifacts\HSPI_IdleLightColors.exe.config
         cp install.txt artifacts\install.txt
+        $release_version = (Get-ChildItem -Filter "artifacts\HSPI_IdleLightColors.exe" | Select-Object -ExpandProperty VersionInfo).FileVersion.Replace('.', '-')
+        echo "release_version=$release_version"
+        echo "release_version=$release_version" >> $env:GITHUB_ENV
     
     - name: Stage debug artifacts
       run: |
         mkdir artifacts-debug
-        cp HSPI_IdleLightColors\bin\Debug\HSPI_IdleLightColors.exe "artifacts-debug\HSPI_IdleLightColors.exe"
+        cp HSPI_IdleLightColors\bin\Debug\HSPI_IdleLightColors.exe artifacts-debug\HSPI_IdleLightColors.exe
+        cp HSPI_IdleLightColors\bin\Release\HSPI_IdleLightColors.exe.config artifacts-debug\HSPI_IdleLightColors.exe.config
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v3
       with:
-        name: Plugin
+        name: IdleLightColors_${{ env.release_version }}
         path: artifacts
     
     - name: Upload debug artifacts
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v3
       with:
         name: Debug Build
         path: artifacts-debug
