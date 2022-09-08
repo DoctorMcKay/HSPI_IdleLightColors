@@ -95,8 +95,8 @@ namespace HSPI_IdleLightColors
 			string defaultIdle = ((int) WD200NormalModeColor.Blue).ToString();
 			string defaultActive = ((int) WD200NormalModeColor.White).ToString();
 			
-			string idleColorStr = HomeSeerSystem.GetINISetting("Colors", "idle_color", defaultIdle, Id);
-			string activeColorStr = HomeSeerSystem.GetINISetting("Colors", "active_color", defaultActive, Id);
+			string idleColorStr = HomeSeerSystem.GetINISetting("Colors", "idle_color", defaultIdle, SettingsFileName);
+			string activeColorStr = HomeSeerSystem.GetINISetting("Colors", "active_color", defaultActive, SettingsFileName);
 
 			_offColor = (WD200NormalModeColor) int.Parse(idleColorStr);
 			_onColor = (WD200NormalModeColor) int.Parse(activeColorStr);
