@@ -9,6 +9,7 @@ using HomeSeer.PluginSdk.Devices;
 using HomeSeer.PluginSdk.Logging;
 using HSPI_IdleLightColors.Enums;
 using HSPI_IdleLightColors.Structs;
+using HSPI_WX200MultiStatus.Enums;
 
 namespace HSPI_IdleLightColors
 {
@@ -190,7 +191,7 @@ namespace HSPI_IdleLightColors
 			});
 			
 			if (_zwavePluginType == ZwavePluginType.LegacyPreSetDeviceParameterValue) {
-				HSPI_ZWave.HSPI.ConfigResult enumResult = (HSPI_ZWave.HSPI.ConfigResult) result;
+				ConfigResult enumResult = (ConfigResult) result;
 				return enumResult.ToString();
 			}
 			

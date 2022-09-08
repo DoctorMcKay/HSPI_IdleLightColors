@@ -34,6 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AnalyticsClient.cs" />
+    <Compile Include="Enums\ConfigResult.cs" />
     <Compile Include="Enums\WD200ConfigParam.cs" />
     <Compile Include="Enums\WD200NormalModeColor.cs" />
     <Compile Include="Enums\ZwavePluginType.cs" />
@@ -45,9 +46,6 @@
   <ItemGroup>
     <Reference Include="HSCF, Version=1.0.0.2, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\HomeSeer-PluginSDK.1.4.2\lib\net462\HSCF.dll</HintPath>
-    </Reference>
-    <Reference Include="HSPI_ZWave, Version=3.0.2.261, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\HSPI_ZWave.exe</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
