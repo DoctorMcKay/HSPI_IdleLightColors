@@ -16,7 +16,8 @@ namespace HSPI_IdleLightColors
 	// ReSharper disable once InconsistentNaming
 	public class HSPI : AbstractPlugin {
 		public override string Name { get; } = "HS-WD200 Idle Light Colors";
-		public override string Id { get; } = "WD200 Idle Light Colors";
+		public override string Id { get; } = "WD200IdleLightColors";
+		protected override string SettingsFileName { get; } = "WD200 Idle Light Colors.ini";
 
 		private WD200NormalModeColor _offColor;
 		private WD200NormalModeColor _onColor;
